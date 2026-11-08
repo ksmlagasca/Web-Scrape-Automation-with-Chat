@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Keyword Intelligence Studio</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="brand" href="/">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>Keyword <em>Intelligence</em></span>
+    </a>
+
+    <div class="header-meta">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span id="model-pill">GPT-5.6 Luna</span>
+      <span class="divider" aria-hidden="true"></span>
+      <span>Apify × OpenRouter</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- HERO + SEARCH -->
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Social + web listening, synthesized</p>
+        <h1>
+          Turn one keyword into a
+          <span class="gradient-text">living dashboard.</span>
+        </h1>
+        <p class="lede">
+          Scrape X, Instagram Reels, and the open web with Apify. Then let
+          GPT-5.6 Luna design the charts, surface the signal, and answer your
+          follow-up questions.
+        </p>
+      </div>
+
+      <div class="search-panel">
+        <label class="field-label" for="keyword">
+          What do you want to understand?
+        </label>
+
+        <form id="search-form" class="search-form" autocomplete="off">
+          <span class="search-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="19" height="19" fill="none">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+              <path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </span>
+
+          <input
+            id="keyword"
+            name="keyword"
+            type="text"
+            placeholder="e.g. AI agents, Nike, @natgeo, climate tech"
+            maxlength="160"
+            required
+          />
+
+          <button type="submit" id="analyze-btn">
+            <span>Analyze</span>
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </form>
+
+        <div class="examples">
+          <span>Try</span>
+          <button class="example-chip" data-keyword="AI agents">AI agents</button>
+          <button class="example-chip" data-keyword="Nike">Nike</button>
+          <button class="example-chip" data-keyword="@natgeo">@natgeo</button>
+          <button class="example-chip" data-keyword="climate tech">climate tech</button>
+        </div>
+
+        <p class="search-hint">
+          Instagram treats the keyword as a public profile handle. X and Web use
+          it as a search query. 100 items per source.
+        </p>
+      </div>
+    </section>
+
+    <!-- EMPTY STATE -->
+    <section id="empty-state" class="empty-state">
+      <div class="empty-grid">
+        <article class="empty-card">
+          <span class="empty-index">01</span>
+          <h3>Three sources, one view</h3>
+          <p>
+            X posts, Instagram Reels, and cleaned web pages are scraped in
+            parallel and normalized into a single analytical frame.
+          </p>
+        </article>
+        <article class="empty-card">
+          <span class="empty-index">02</span>
+          <h3>LLM-designed dashboard</h3>
+          <p>
+            GPT-5.6 Luna chooses the KPIs, chart types, and narrative for each
+            keyword, then ECharts makes it interactive.
+          </p>
+        </article>
+        <article class="empty-card">
+          <span class="empty-index">03</span>
+          <h3>Ask the data</h3>
+          <p>
+            The insights chatbot is grounded in the scraped dataset, so answers
+            cite real counts, handles, and headlines.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="dashboard" hidden>
+      <div class="dashboard-head">
+        <div class="dashboard-head-copy">
+          <p class="eyebrow" id="dashboard-eyebrow">Live analysis</p>
+          <h2 id="dashboard-title"></h2>
+          <p class="dashboard-subtitle" id="dashboard-subtitle"></p>
+        </div>
+
+        <div class="dashboard-meta">
+          <div class="keyword-chip" id="keyword-chip"></div>
+          <div class="source-pills" id="source-pills"></div>
+          <div class="timestamp" id="dashboard-timestamp"></div>
+          <button id="regenerate-btn" class="ghost-btn" type="button">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" aria-hidden="true">
+              <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+            Re-synthesize
+          </button>
+        </div>
+      </div>
+
+      <div id="kpi-grid" class="kpi-grid"></div>
+      <div id="insights-panel" class="insights-panel"></div>
+      <div id="chart-grid" class="chart-grid"></div>
+
+      <details class="raw-panel" id="raw-panel">
+        <summary>
+          Explore the raw data
+          <span id="raw-count"></span>
+        </summary>
+        <div class="raw-tabs" id="raw-tabs"></div>
+        <div class="raw-body">
+          <pre id="raw-pre"></pre>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <!-- LOADING BLOCKER -->
+  <div
+    id="blocker"
+    class="blocker"
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="blocker-title"
+  >
+    <div class="blocker-card">
+      <div class="radar" aria-hidden="true"><span></span></div>
+      <p class="eyebrow">Apify pipeline running</p>
+      <h2 id="blocker-title">
+        Scraping “<span id="blocker-keyword"></span>”
+      </h2>
+      <p class="blocker-sub" id="blocker-sub">
+        Starting three actors in parallel…
+      </p>
+
+      <div class="progress-track" aria-hidden="true">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+
+      <div class="steps">
+        <div class="step" id="step-twitter" data-status="queued">
+          <span class="step-dot" aria-hidden="true"></span>
+          <span class="step-name">X / Twitter</span>
+          <span class="step-meta">Queued</span>
+        </div>
+        <div class="step" id="step-instagram" data-status="queued">
+          <span class="step-dot" aria-hidden="true"></span>
+          <span class="step-name">Instagram Reels</span>
+          <span class="step-meta">Queued</span>
+        </div>
+        <div class="step" id="step-web" data-status="queued">
+          <span class="step-dot" aria-hidden="true"></span>
+          <span class="step-name">Web research</span>
+          <span class="step-meta">Queued</span>
+        </div>
+        <div class="step" id="step-synthesize" data-status="queued">
+          <span class="step-dot" aria-hidden="true"></span>
+          <span class="step-name">Dashboard synthesis</span>
+          <span class="step-meta">Waiting</span>
+        </div>
+      </div>
+
+      <p class="blocker-foot">
+        <span id="elapsed">0s</span> elapsed · You can leave this tab open
+      </p>
+    </div>
+  </div>
+
+  <!-- CHATBOT -->
+  <div id="chat-widget" class="chat-widget">
+    <button
+      id="chat-fab"
+      class="chat-fab"
+      type="button"
+      aria-label="Open insights chatbot"
+    >
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+        <path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+        <path d="M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z" fill="currentColor" />
+      </svg>
+      <span class="chat-fab-label">Ask the data</span>
+      <span class="chat-pulse" aria-hidden="true"></span>
+    </button>
+
+    <section id="chat-panel" class="chat-panel" aria-label="Insights chatbot" hidden>
+      <header class="chat-head">
+        <div>
+          <strong>Insights analyst</strong>
+          <span>GPT-5.6 Luna · grounded in this dataset</span>
+        </div>
+        <button id="chat-close" class="icon-btn" type="button" aria-label="Close chat">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+        </button>
+      </header>
+
+      <div id="chat-messages" class="chat-messages" aria-live="polite"></div>
+
+      <div id="chat-suggestions" class="chat-suggestions">
+        <button type="button" data-q="What is the strongest signal in this data?">
+          Strongest signal?
+        </button>
+        <button type="button" data-q="Compare X and Instagram engagement.">
+          Compare platforms
+        </button>
+        <button type="button" data-q="What should I investigate next?">
+          Next steps
+        </button>
+      </div>
+
+      <form id="chat-form" class="chat-form">
+        <input
+          id="chat-input"
+          type="text"
+          placeholder="Ask about the data…"
+          maxlength="1000"
+          autocomplete="off"
+        />
+        <button type="submit" id="chat-send" aria-label="Send message">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+            <path d="M4 12l16-8-5.5 16-3-6.5L4 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+          </svg>
+        </button>
+      </form>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
