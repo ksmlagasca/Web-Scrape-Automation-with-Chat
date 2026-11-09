@@ -728,10 +728,108 @@ async function sendChat(rawQuestion) {
   }
 }
 
+/**
+ * Converts markdown text to sanitized HTML.
+ * Uses marked + DOMPurify when available, with a built-in fallback parser.
+ */
+function renderMarkdown(rawText) {
+  const text = String(rawText ?? '');
+  if (!text.trim()) return '';
+
+  if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+    try {
+      marked.setOptions({
+        gfm: true,
+        breaks: true
+      });
+      const rawHtml = marked.parse(text);
+      if (typeof DOMPurify !== 'undefined' && typeof DOMPurify.sanitize === 'function') {
+        return DOMPurify.sanitize(rawHtml, {
+          ADD_ATTR: ['target', 'rel']
+        });
+      }
+      return rawHtml;
+    } catch (err) {
+      console.warn('marked parse error, falling back:', err);
+    }
+  }
+
+  return formatMarkdownFallback(text);
+}
+
+/**
+ * Lightweight fallback parser for basic markdown elements.
+ */
+function formatMarkdownFallback(text) {
+  let html = esc(text);
+
+  // Fenced code blocks ```...```
+  html = html.replace(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g, (_match, _lang, code) => {
+    return `<pre><code>${code.trim()}</code></pre>`;
+  });
+
+  // Inline code `...`
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // Headers (####, ###, ##, #)
+  html = html.replace(/^#### (.*?)$/gm, '<h4>$1</h4>');
+  html = html.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
+
+  // Bold (**text** or __text__)
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+
+  // Italic (*text* or _text_)
+  html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+  html = html.replace(/\b_([^_]+)_\b/g, '<em>$1</em>');
+
+  // Blockquotes (> quote)
+  html = html.replace(/^>\s?(.*?)$/gm, '<blockquote>$1</blockquote>');
+
+  // Unordered list items (* or -)
+  html = html.replace(/^[\*\-]\s+(.*?)$/gm, '<li>$1</li>');
+  html = html.replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>');
+  html = html.replace(/<\/ul>\s*<ul>/g, '');
+
+  // Ordered list items (1. )
+  html = html.replace(/^\d+\.\s+(.*?)$/gm, '<oli>$1</oli>');
+  html = html.replace(/(<oli>[\s\S]*?<\/oli>)/g, '<ol>$1</ol>');
+  html = html.replace(/<oli>/g, '<li>').replace(/<\/oli>/g, '</li>');
+  html = html.replace(/<\/ol>\s*<ol>/g, '');
+
+  // Links [text](url)
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+  // Paragraphs
+  const paragraphs = html
+    .split(/\n\s*\n/)
+    .map((p) => {
+      const trimmed = p.trim();
+      if (!trimmed) return '';
+      if (/^(<h[1-4]>|<pre>|<ul>|<ol>|<blockquote>)/.test(trimmed)) {
+        return trimmed;
+      }
+      return `<p>${trimmed.replace(/\n/g, '<br />')}</p>`;
+    })
+    .filter(Boolean);
+
+  return paragraphs.join('');
+}
+
 function addChatMessage(role, content) {
   const message = document.createElement('div');
   message.className = `msg ${role}`;
-  message.textContent = content;
+  if (role === 'assistant') {
+    message.innerHTML = renderMarkdown(content);
+    message.querySelectorAll('a').forEach((link) => {
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+    });
+  } else {
+    message.textContent = content;
+  }
   chatMessages.appendChild(message);
   chatMessages.scrollTop = chatMessages.scrollHeight;
 }

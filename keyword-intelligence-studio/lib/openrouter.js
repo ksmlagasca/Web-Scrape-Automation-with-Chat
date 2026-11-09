@@ -50,7 +50,7 @@ RULES:
 - Keep labels short. No HTML in any string.
 - KPIs must be derived from the supplied analytics. Values are display strings like "12.4K" or "38%".
 - Insights must be specific, evidence-based, 2-4 sentences each, 3-5 total.
-- Compare X/Twitter, Instagram Reels, and Web research where relevant.
+- Compare X/Twitter, Instagram, and Web research where relevant.
 - If a source has zero items, do not fabricate data. Note it in an insight.
 - The user sees this dashboard immediately. Make it feel like a finished editorial analytics page.
 `;
@@ -344,7 +344,7 @@ function normalizeDashboard(spec, job) {
     ).slice(0, 160),
     subtitle: String(
       spec.subtitle ||
-        `${job.analytics.counts.total} items from X, Instagram Reels, and the open web.`
+        `${job.analytics.counts.total} items from X, Instagram, and the open web.`
     ).slice(0, 260),
     kpis,
     charts,
@@ -397,7 +397,7 @@ function fallbackInsights(analytics) {
 
   return [
     `X/Twitter returned ${platforms.twitter.count} items with ${platforms.twitter.engagement.toLocaleString()} total engagement (avg ${platforms.twitter.avgEngagement} per item).`,
-    `Instagram Reels returned ${platforms.instagram.count} items, ${platforms.instagram.engagement.toLocaleString()} likes/comments, and ${platforms.instagram.views.toLocaleString()} video views.`,
+    `Instagram returned ${platforms.instagram.count} items, ${platforms.instagram.engagement.toLocaleString()} likes/comments, and ${platforms.instagram.views.toLocaleString()} video views.`,
     `Web research captured ${platforms.web.count} pages (~${platforms.web.words.toLocaleString()} words). Top domains: ${
       topDomains
         .slice(0, 3)
@@ -419,7 +419,7 @@ function fallbackInsights(analytics) {
 function fallbackSources(analytics) {
   return [
     { label: 'X / Twitter', count: analytics.platforms.twitter.count },
-    { label: 'Instagram Reels', count: analytics.platforms.instagram.count },
+    { label: 'Instagram', count: analytics.platforms.instagram.count },
     { label: 'Web research', count: analytics.platforms.web.count }
   ];
 }
@@ -703,7 +703,7 @@ function buildFallbackDashboard(job) {
 
   return {
     title: `What the world is saying about “${job.keyword}”`,
-    subtitle: `${analytics.counts.total} items from X, Instagram Reels, and the open web — deterministic fallback view.`,
+    subtitle: `${analytics.counts.total} items from X, Instagram, and the open web — deterministic fallback view.`,
     kpis: fallbackKpis(analytics),
     charts: charts.slice(0, 6),
     insights: fallbackInsights(analytics),

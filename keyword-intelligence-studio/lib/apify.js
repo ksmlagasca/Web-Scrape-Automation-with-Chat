@@ -15,14 +15,41 @@ export const ACTORS = {
   },
   instagram: {
     key: 'instagram',
-    label: 'Instagram Reels',
-    actorId: 'apify~instagram-reel-scraper',
-    buildInput: (keyword) => ({
-      // The reel scraper is profile-oriented. The keyword is treated
-      // as a public Instagram handle, e.g. "@natgeo" or "natgeo".
-      username: [handleFromKeyword(keyword)],
-      resultsLimit: MAX_ITEMS
-    })
+    label: 'Instagram',
+    actorId: 'apify~instagram-scraper',
+    buildInput: (keyword) => {
+      const trimmed = String(keyword || '').trim();
+      if (/^https?:\/\/(www\.)?instagram\.com\//i.test(trimmed)) {
+        return {
+          directUrls: [trimmed],
+          resultsType: 'posts',
+          resultsLimit: MAX_ITEMS
+        };
+      }
+      if (trimmed.startsWith('@')) {
+        const handle = handleFromKeyword(trimmed);
+        return {
+          directUrls: [`https://www.instagram.com/${handle}/`],
+          resultsType: 'posts',
+          resultsLimit: MAX_ITEMS
+        };
+      }
+      if (trimmed.startsWith('#')) {
+        const tag = trimmed.replace(/^#+/, '').trim();
+        return {
+          directUrls: [`https://www.instagram.com/explore/tags/${tag}/`],
+          resultsType: 'posts',
+          resultsLimit: MAX_ITEMS
+        };
+      }
+      return {
+        search: trimmed,
+        searchType: 'hashtag',
+        resultsType: 'posts',
+        resultsLimit: MAX_ITEMS,
+        searchLimit: 10
+      };
+    }
   },
   web: {
     key: 'web',
@@ -201,17 +228,26 @@ function compactInstagram(item = {}) {
         'edge_media_to_caption.edges.0.node.text'
       ) ?? ''
     ).slice(0, 1200),
-    owner: pick(item, 'ownerUsername', 'owner.username', 'username'),
-    createdAt: pick(item, 'timestamp', 'takenAt', 'date'),
-    likes: num(pick(item, 'likesCount', 'likes', 'edge_liked_by.count')),
-    comments: num(
-      pick(item, 'commentsCount', 'comments', 'edge_media_to_comment.count')
+    owner: pick(
+      item,
+      'ownerUsername',
+      'owner.username',
+      'user.username',
+      'username',
+      'author'
     ),
-    views: num(
-      pick(item, 'videoPlayCount', 'videoViewCount', 'playCount', 'views')
+    createdAt: pick(item, 'timestamp', 'takenAt', 'date'),
+    likes: Math.max(0, num(pick(item, 'likesCount', 'likes', 'edge_liked_by.count'))),
+    comments: Math.max(
+      0,
+      num(pick(item, 'commentsCount', 'comments', 'edge_media_to_comment.count'))
+    ),
+    views: Math.max(
+      0,
+      num(pick(item, 'videoPlayCount', 'videoViewCount', 'videoViews', 'playCount', 'views'))
     ),
     url: pick(item, 'url', 'displayUrl', 'shortCode'),
-    type: pick(item, 'type', 'productType') || 'reel'
+    type: pick(item, 'type', 'productType') || 'post'
   };
 }
 
@@ -273,7 +309,7 @@ function buildAnalytics(data) {
       avgEngagement: x.length ? Number((xEngagement / x.length).toFixed(1)) : 0
     },
     instagram: {
-      label: 'Instagram Reels',
+      label: 'Instagram',
       count: ig.length,
       likes: sum(ig, 'likes'),
       comments: sum(ig, 'comments'),
@@ -425,7 +461,7 @@ export async function scrapeAll(keyword, onProgress = () => {}) {
 
   const state = {
     twitter: { status: 'queued', label: 'X / Twitter' },
-    instagram: { status: 'queued', label: 'Instagram Reels' },
+    instagram: { status: 'queued', label: 'Instagram' },
     web: { status: 'queued', label: 'Web research' }
   };
 

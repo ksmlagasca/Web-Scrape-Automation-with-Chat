@@ -43,7 +43,7 @@
           <span class="gradient-text">living dashboard.</span>
         </h1>
         <p class="lede">
-          Scrape X, Instagram Reels, and the open web with Apify. Then let
+          Scrape X, Instagram, and the open web with Apify. Then let
           GPT-5.6 Luna design the charts, surface the signal, and answer your
           follow-up questions.
         </p>
@@ -83,7 +83,7 @@
         </div>
 
         <p class="search-hint">
-          Instagram treats the keyword as a public profile handle. X and Web use
+          Instagram searches hashtags, topics, or public profile handles (@handle). X and Web use
           it as a search query. 100 items per source.
         </p>
       </div>
@@ -96,7 +96,7 @@
           <span class="empty-index">01</span>
           <h3>Three sources, one view</h3>
           <p>
-            X posts, Instagram Reels, and cleaned web pages are scraped in
+            X posts, Instagram posts/reels, and cleaned web pages are scraped in
             parallel and normalized into a single analytical frame.
           </p>
         </article>
@@ -184,7 +184,7 @@
         </div>
         <div class="step" id="step-instagram" data-status="queued">
           <span class="step-dot" aria-hidden="true"></span>
-          <span class="step-name">Instagram Reels</span>
+          <span class="step-name">Instagram</span>
           <span class="step-meta">Queued</span>
         </div>
         <div class="step" id="step-web" data-status="queued">
@@ -258,6 +258,8 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script src="/app.js"></script>
 </body>
 

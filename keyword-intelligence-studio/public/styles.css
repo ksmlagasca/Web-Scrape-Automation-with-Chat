@@ -1052,7 +1052,7 @@ h2 {
   border-radius: 14px;
   font-size: 0.84rem;
   line-height: 1.55;
-  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .msg.user {
@@ -1060,6 +1060,7 @@ h2 {
   border-bottom-right-radius: 4px;
   background: linear-gradient(135deg, #7c5cff, #5b3df5);
   color: #fff;
+  white-space: pre-wrap;
 }
 
 .msg.assistant {
@@ -1068,6 +1069,98 @@ h2 {
   border-bottom-left-radius: 4px;
   background: rgba(255, 255, 255, 0.05);
   color: #d1dbea;
+}
+
+.msg.assistant p {
+  margin: 0 0 0.55em 0;
+}
+
+.msg.assistant p:last-child {
+  margin-bottom: 0;
+}
+
+.msg.assistant strong,
+.msg.assistant b {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.msg.assistant em,
+.msg.assistant i {
+  font-style: italic;
+  color: #e2e8f0;
+}
+
+.msg.assistant h1,
+.msg.assistant h2,
+.msg.assistant h3,
+.msg.assistant h4 {
+  margin: 0.75em 0 0.3em 0;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.35;
+}
+
+.msg.assistant h1:first-child,
+.msg.assistant h2:first-child,
+.msg.assistant h3:first-child,
+.msg.assistant h4:first-child {
+  margin-top: 0;
+}
+
+.msg.assistant h1 { font-size: 1.05rem; }
+.msg.assistant h2 { font-size: 0.98rem; }
+.msg.assistant h3 { font-size: 0.92rem; }
+.msg.assistant h4 { font-size: 0.86rem; }
+
+.msg.assistant ul,
+.msg.assistant ol {
+  margin: 0.4em 0 0.6em 0;
+  padding-left: 1.25rem;
+}
+
+.msg.assistant li {
+  margin: 0.25em 0;
+}
+
+.msg.assistant code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8em;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+}
+
+.msg.assistant pre {
+  margin: 0.5em 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  overflow-x: auto;
+}
+
+.msg.assistant pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.msg.assistant blockquote {
+  margin: 0.5em 0;
+  padding-left: 10px;
+  border-left: 3px solid #7c5cff;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.msg.assistant a {
+  color: #a78bfa;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.msg.assistant a:hover {
+  color: #c4b5fd;
 }
 
 .msg.typing {
