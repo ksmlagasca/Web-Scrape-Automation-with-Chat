@@ -57,8 +57,14 @@ RULES:
   passages as evidence, and use numbers only to support a narrative point.
 - At least 2 of the insights must be narrative/story-driven. Include one on what the coverage implies for brand
   visibility (who owns the conversation, which sources dominate, what is missing).
-- Web research is the primary source. Mention X/Twitter or Instagram only if they actually contain items.
-- If a source has zero items, do not fabricate data. Note it in an insight.
+- DONUT CHART REQUIREMENT: NEVER create a chart classifying items by platform/channel (e.g., Instagram vs. X/Twitter vs. Web research).
+  Instead, include ONE donut chart (type "pie" with inner/outer radius like ["45%", "72%"]) that groups the results into
+  2 to 4 common keyword topics / thematic clusters found across the web results (derived from the actual titles, text samples,
+  and topTerms). Each slice must be a short, clear topic label with its count of matching pages or mentions.
+- SOURCE ECOSYSTEM AT THE END: Make the LAST chart in the "charts" array a "Source ecosystem" chart showing the web domains
+  or source mix (e.g. topDomains / publication ecosystem) from the results.
+- Web research is the active source. Mention X/Twitter or Instagram only if they actually contain items in the payload;
+  do not fabricate data or waste charts/insights on unused platforms.
 - The user sees this dashboard immediately. Make it feel like a finished editorial analytics page.
 `;
 
@@ -220,18 +226,36 @@ export async function generateDashboard(job) {
 
 function buildDashboardPayload(job) {
   const { data, analytics } = job;
+  const hasX = (data.twitter?.length || 0) > 0;
+  const hasIg = (data.instagram?.length || 0) > 0;
 
-  const sample = {
-    x: data.twitter.slice(0, 30),
-    instagram: data.instagram.slice(0, 30),
-    web: data.web.slice(0, 20)
+  const sample = { web: (data.web || []).slice(0, 20) };
+  if (hasX) sample.x = data.twitter.slice(0, 30);
+  if (hasIg) sample.instagram = data.instagram.slice(0, 30);
+
+  const activePlatforms = { web: analytics.platforms.web };
+  if (hasX) activePlatforms.twitter = analytics.platforms.twitter;
+  if (hasIg) activePlatforms.instagram = analytics.platforms.instagram;
+
+  const activeCounts = { web: job.counts.web, total: job.counts.total };
+  if (hasX) activeCounts.x = job.counts.x;
+  if (hasIg) activeCounts.instagram = job.counts.instagram;
+
+  const filteredAnalytics = {
+    counts: activeCounts,
+    platforms: activePlatforms,
+    topDomains: analytics.topDomains,
+    topTerms: analytics.topTerms
   };
+  if (analytics.topAuthors?.length) filteredAnalytics.topAuthors = analytics.topAuthors;
+  if (analytics.timeline?.length) filteredAnalytics.timeline = analytics.timeline;
+  if (analytics.dateRange) filteredAnalytics.dateRange = analytics.dateRange;
 
   return JSON.stringify(
     {
       keyword: job.keyword,
-      counts: job.counts,
-      analytics,
+      counts: activeCounts,
+      analytics: filteredAnalytics,
       sample,
       note:
         'Samples are truncated. Analytics contains the full aggregate picture. ' +
@@ -426,17 +450,63 @@ function fallbackChartBase(title, subtitle, span, height) {
 
 function buildFallbackDashboard(job) {
   const analytics = job.analytics;
-  const platforms = analytics.platforms;
   const charts = [];
 
   if (analytics.topTerms.length) {
+    // Pick 2-4 common keyword topics (excluding tokens from the search query itself when possible)
+    const queryTokens = new Set(
+      String(job.keyword || '')
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter((t) => t.length >= 2)
+    );
+    const nonQueryTerms = analytics.topTerms.filter(
+      (entry) => !queryTokens.has(entry.term.toLowerCase())
+    );
+    const topicSlice = (nonQueryTerms.length >= 2 ? nonQueryTerms : analytics.topTerms).slice(0, 4);
+
+    if (topicSlice.length >= 2) {
+      charts.push({
+        id: 'keyword-topics',
+        ...fallbackChartBase(
+          'Common keyword topics',
+          'Top recurring themes across web research results',
+          6,
+          340
+        ),
+        echartsOption: {
+          color: PALETTE,
+          tooltip: {
+            trigger: 'item',
+            backgroundColor: '#0f172a',
+            borderColor: 'rgba(255,255,255,.12)',
+            textStyle: { color: '#e6edf7' }
+          },
+          legend: { bottom: 0, textStyle: { color: '#9fb0c8' } },
+          series: [
+            {
+              type: 'pie',
+              radius: ['45%', '72%'],
+              center: ['50%', '45%'],
+              itemStyle: { borderColor: '#0d131f', borderWidth: 2 },
+              label: { color: '#9fb0c8' },
+              data: topicSlice.map((entry) => ({
+                name: entry.term,
+                value: entry.count
+              }))
+            }
+          ]
+        }
+      });
+    }
+
     const terms = analytics.topTerms.slice(0, 10).reverse();
 
     charts.push({
       id: 'top-terms',
       ...fallbackChartBase(
         'Most frequent terms',
-        'Keyword and caption vocabulary',
+        'Keyword and content vocabulary',
         6,
         340
       ),
@@ -473,33 +543,44 @@ function buildFallbackDashboard(job) {
 
   if (analytics.topDomains.length) {
     charts.push({
-      id: 'web-domains',
+      id: 'source-ecosystem',
       ...fallbackChartBase(
-        'Web source mix',
-        'Domains returned by the RAG browser',
+        'Source ecosystem',
+        'Web domains contributing to coverage',
         12,
         300
       ),
       echartsOption: {
         color: PALETTE,
         tooltip: {
-          trigger: 'item',
+          trigger: 'axis',
           backgroundColor: '#0f172a',
           borderColor: 'rgba(255,255,255,.12)',
           textStyle: { color: '#e6edf7' }
         },
-        legend: { bottom: 0, textStyle: { color: '#9fb0c8' } },
+        grid: { left: 8, right: 24, top: 12, bottom: 8, containLabel: true },
+        xAxis: {
+          type: 'value',
+          splitLine: { lineStyle: { color: 'rgba(255,255,255,.07)' } },
+          axisLabel: { color: '#9fb0c8' }
+        },
+        yAxis: {
+          type: 'category',
+          data: analytics.topDomains
+            .slice(0, 10)
+            .reverse()
+            .map((entry) => entry.domain),
+          axisLine: { lineStyle: { color: 'rgba(255,255,255,.12)' } },
+          axisLabel: { color: '#9fb0c8' }
+        },
         series: [
           {
-            type: 'pie',
-            radius: ['42%', '68%'],
-            center: ['50%', '46%'],
-            itemStyle: { borderColor: '#0d131f', borderWidth: 2 },
-            label: { color: '#9fb0c8' },
-            data: analytics.topDomains.map((entry) => ({
-              name: entry.domain,
-              value: entry.count
-            }))
+            type: 'bar',
+            data: analytics.topDomains
+              .slice(0, 10)
+              .reverse()
+              .map((entry) => entry.count),
+            itemStyle: { borderRadius: [0, 4, 4, 0] }
           }
         ]
       }
