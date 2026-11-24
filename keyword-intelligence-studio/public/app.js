@@ -84,7 +84,7 @@ async function startAnalysis(rawKeyword) {
 
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
-      throw new Error(payload.error || 'Failed to start the scrape.');
+      throw new Error(payload.error || 'Failed to start the sync.');
     }
 
     const { jobId } = await response.json();
@@ -105,7 +105,7 @@ async function pollJob(jobId) {
 
     const response = await fetch(`/api/scrape/${jobId}`);
     if (!response.ok) {
-      throw new Error('Lost contact with the scrape job.');
+      throw new Error('Lost contact with the sync job.');
     }
 
     const job = await response.json();
@@ -151,13 +151,13 @@ async function pollJob(jobId) {
     }
 
     if (job.status === 'error') {
-      throw new Error(job.error || 'The scrape failed.');
+      throw new Error(job.error || 'The sync failed.');
     }
 
     await sleep(1400);
   }
 
-  throw new Error('The scrape took too long. Try a narrower keyword.');
+  throw new Error('The sync took too long. Try a narrower keyword.');
 }
 
 async function requestDashboard(jobId, regenerate) {
@@ -207,6 +207,7 @@ function startElapsed() {
 function resetBlockerSteps() {
   ['twitter', 'instagram', 'web', 'synthesize'].forEach((key) => {
     const step = $(`#step-${key}`);
+    if (!step) return;
     step.dataset.status = 'queued';
     step.querySelector('.step-meta').textContent =
       key === 'synthesize' ? 'Waiting' : 'Queued';
@@ -216,7 +217,7 @@ function resetBlockerSteps() {
 }
 
 function updateBlocker(job) {
-  const actorKeys = ['twitter', 'instagram', 'web'];
+  const actorKeys = ['web']; // twitter / instagram disabled
   let finished = 0;
 
   for (const key of actorKeys) {
@@ -227,7 +228,7 @@ function updateBlocker(job) {
     step.dataset.status = status;
 
     let meta = 'Queued';
-    if (status === 'running') meta = 'Scraping…';
+    if (status === 'running') meta = 'Syncing…';
     if (status === 'done') meta = `${actor.count ?? 0} items`;
     if (status === 'error') meta = 'Failed';
     step.querySelector('.step-meta').textContent = meta;
@@ -235,12 +236,12 @@ function updateBlocker(job) {
     if (status === 'done' || status === 'error') finished += 1;
   }
 
-  const percent = Math.min(85, 12 + finished * 24);
+  const percent = Math.min(85, 12 + finished * 72);
   progressFill.style.width = `${percent}%`;
 
-  if (finished < 3) {
+  if (finished < actorKeys.length) {
     $('#blocker-sub').textContent =
-      'Apify is collecting up to 100 items per source…';
+      'Syncing up to 100 public web results…';
   }
 }
 
@@ -253,9 +254,7 @@ function setSynthesizingStage() {
   step.dataset.status = 'running';
   step.querySelector('.step-meta').textContent = 'Designing…';
 
-  const completed = $('#step-twitter').dataset.status === 'done' ||
-    $('#step-instagram').dataset.status === 'done' ||
-    $('#step-web').dataset.status === 'done';
+  const completed = $('#step-web').dataset.status === 'done';
 
   if (completed) {
     // Keep the completed actor states, but mark synthesis as active.
@@ -301,8 +300,6 @@ function renderSourcePills(spec) {
     ? spec.sources
     : (state.data
         ? [
-            { label: 'X / Twitter', count: state.data.twitter.length },
-            { label: 'Instagram', count: state.data.instagram.length },
             { label: 'Web', count: state.data.web.length }
           ]
         : []);
@@ -477,8 +474,6 @@ function renderRawData(data) {
   panel.hidden = false;
 
   const groups = [
-    { key: 'twitter', label: 'X / Twitter', items: data.twitter || [] },
-    { key: 'instagram', label: 'Instagram', items: data.instagram || [] },
     { key: 'web', label: 'Web', items: data.web || [] }
   ];
 
@@ -506,7 +501,7 @@ function renderRawData(data) {
     tabs.appendChild(button);
   });
 
-  show('twitter');
+  show('web');
 }
 
 function basicSpecFromJob(job) {
@@ -521,44 +516,26 @@ function basicSpecFromJob(job) {
   };
 
   return {
-    title: `What the world is saying about “${job.keyword}”`,
+    title: `Brand visibility for “${job.keyword}”`,
     subtitle:
       'A minimal client-side view. Use Re-synthesize to retry the LLM dashboard.',
     kpis: [
       {
-        label: 'Items analyzed',
-        value: String(counts.total),
-        delta: null,
-        hint: 'X + Instagram + Web'
-      },
-      {
-        label: 'X / Twitter',
-        value: String(counts.x),
-        delta: null,
-        hint: 'Posts returned'
-      },
-      {
-        label: 'Instagram Reels',
-        value: String(counts.instagram),
-        delta: null,
-        hint: 'Reels returned'
-      },
-      {
-        label: 'Web pages',
+        label: 'Pages synced',
         value: String(counts.web),
         delta: null,
-        hint: 'Pages extracted'
+        hint: 'Public web pages found'
       }
     ],
     charts: [
       {
         id: 'volume',
         title: 'Content volume by source',
-        subtitle: 'Items returned by each actor',
+        subtitle: 'Pages synced from the web',
         span: 12,
         height: 320,
         echartsOption: {
-          color: ['#7c5cff', '#2dd4bf', '#f59e0b'],
+          color: ['#7c5cff'],
           tooltip: {
             trigger: 'axis',
             backgroundColor: '#0f172a',
@@ -568,7 +545,7 @@ function basicSpecFromJob(job) {
           grid: { left: 8, right: 16, top: 24, bottom: 8, containLabel: true },
           xAxis: {
             type: 'category',
-            data: ['X / Twitter', 'Instagram', 'Web'],
+            data: ['Web'],
             axisLine: { lineStyle: { color: 'rgba(255,255,255,.12)' } },
             axisLabel: { color: '#9fb0c8' }
           },
@@ -583,7 +560,7 @@ function basicSpecFromJob(job) {
               colorBy: 'data',
               barWidth: '46%',
               itemStyle: { borderRadius: [6, 6, 0, 0] },
-              data: [counts.x, counts.instagram, counts.web]
+              data: [counts.web]
             }
           ]
         }
@@ -594,8 +571,6 @@ function basicSpecFromJob(job) {
       'The full dataset is still available below under “Explore the raw data”.'
     ],
     sources: [
-      { label: 'X / Twitter', count: counts.x },
-      { label: 'Instagram', count: counts.instagram },
       { label: 'Web', count: counts.web }
     ],
     generatedBy: 'client-fallback',
@@ -688,7 +663,7 @@ async function sendChat(rawQuestion) {
   if (!state.jobId || !state.data) {
     addChatMessage(
       'assistant',
-      'Run an analysis first, then ask me anything about the scraped data.'
+      'Run an analysis first, then ask me anything about the synced data.'
     );
     return;
   }

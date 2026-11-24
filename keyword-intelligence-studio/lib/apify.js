@@ -3,6 +3,7 @@ const MAX_ITEMS = 100;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const ACTORS = {
+  /* Disabled: only the RAG Web actor is active for now.
   twitter: {
     key: 'twitter',
     label: 'X / Twitter',
@@ -51,6 +52,7 @@ export const ACTORS = {
       };
     }
   },
+  */
   web: {
     key: 'web',
     label: 'Web research',
@@ -460,8 +462,8 @@ export async function scrapeAll(keyword, onProgress = () => {}) {
   }
 
   const state = {
-    twitter: { status: 'queued', label: 'X / Twitter' },
-    instagram: { status: 'queued', label: 'Instagram' },
+    // twitter: { status: 'queued', label: 'X / Twitter' },
+    // instagram: { status: 'queued', label: 'Instagram' },
     web: { status: 'queued', label: 'Web research' }
   };
 
@@ -518,9 +520,9 @@ export async function scrapeAll(keyword, onProgress = () => {}) {
   const raw = Object.fromEntries(results.map((r) => [r.key, r.items]));
 
   const data = {
-    twitter: raw.twitter.map(compactTwitter).filter(Boolean),
-    instagram: raw.instagram.map(compactInstagram).filter(Boolean),
-    web: raw.web.map(compactWeb).filter(Boolean)
+    twitter: (raw.twitter || []).map(compactTwitter).filter(Boolean),
+    instagram: (raw.instagram || []).map(compactInstagram).filter(Boolean),
+    web: (raw.web || []).map(compactWeb).filter(Boolean)
   };
 
   const errors = results

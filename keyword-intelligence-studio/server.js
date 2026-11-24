@@ -52,8 +52,8 @@ app.post('/api/scrape', (req, res) => {
     status: 'running',
     createdAt: Date.now(),
     actors: {
-      twitter: { status: 'queued', label: 'X / Twitter' },
-      instagram: { status: 'queued', label: 'Instagram' },
+      // twitter: { status: 'queued', label: 'X / Twitter' },
+      // instagram: { status: 'queued', label: 'Instagram' },
       web: { status: 'queued', label: 'Web research' }
     }
   };
